@@ -16,7 +16,6 @@ int main (int argc, char *argv[]) {
   const long long iterations = 1'000'000'000;
   std::cout << "Available threads " << std::max(1u, std::thread::hardware_concurrency()) << "\n" << std::endl;
   singleThreaded(iterations);
-  std::cout << "\nRunning multi-threaded loop.\n" << std::endl;
   multiThreaded(iterations, 1);
   multiThreaded(iterations, 2);
   multiThreaded(iterations, 4);
@@ -49,7 +48,7 @@ void singleThreaded(long long iterations)
   auto end_time = std::chrono::high_resolution_clock::now();
 
   std::chrono::duration<double>time_difference = end_time - start_time;
-  std::cout << "(No Threading) Time over single run: " << 1000*time_difference.count() << "ms" << std::endl;
+  std::cout << "(No Threading) Time over single run: " << 1000*time_difference.count() << "ms\n" << std::endl;
 }
 
 void workerFunction(long long start, long long end, long long& total_sum)
