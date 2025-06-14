@@ -10,10 +10,10 @@ std::mutex mtx;
 void singleThreaded(long long iterations);
 void multiThreaded(long long iterations, int threads);
 
-
-
 int main (int argc, char *argv[]) {
   const long long iterations = 1'000'000'000;
+
+  // std::thread::hardware_concurrency() returns the number of concurrent threads supported by the implementation.
   std::cout << "Available threads " << std::max(1u, std::thread::hardware_concurrency()) << "\n" << std::endl;
   singleThreaded(iterations);
   multiThreaded(iterations, 1);
@@ -59,7 +59,9 @@ void workerFunction(long long start, long long end, long long& total_sum)
   {
     partial_sum += i;
   }
-  
+
+  // We will cover this later, but essentially it makes sure that a particular shared resource is only 
+  // accessible by a single thread at a single time.
   std::lock_guard<std::mutex> lock(mtx);
   total_sum = total_sum + partial_sum; 
 }
@@ -68,10 +70,13 @@ void multiThreaded(long long iterations, int thread_count)
 {
   const int num_runs = 15;
   double total_duration_seconds = 0.0;
-
+  
+  // Running the multi-threaded loop multiple times and averaging out the time taken for a broader idea of 
+  // time actually taken to do stuff.
   for (int run = 0; run < num_runs; ++run) {
     auto start_time = std::chrono::high_resolution_clock::now();
-
+    
+    // Allocate memory for threads.
     std::vector<std::thread> threads;
     threads.reserve(thread_count);
 
@@ -86,6 +91,7 @@ void multiThreaded(long long iterations, int thread_count)
             end = iterations;
         }
         
+        // Create and launch a new thread on the workerFunction, passing the total_sum by reference.
         threads.emplace_back(workerFunction, start, end, std::ref(total_sum));
 
         start = end + 1;
