@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <chrono>
 
-const std::string DICT_PATH = "/usr/share/dict/usa"; 
+const std::string DICT_PATH = "./10000_most_common"; 
 const size_t TARGET_SIZE_MB = 500;
 const size_t NUM_FILES = 8;
 const size_t WORDS_PER_CHUNK = 1000;
@@ -45,8 +45,17 @@ void generate_file(const std::vector<std::string>& words, const std::string& fil
 
     while (total_bytes < TARGET_SIZE_BYTES) {
         std::string chunk;
+        size_t word_count = 0;
+
         for (size_t i = 0; i < WORDS_PER_CHUNK; ++i) {
-            chunk += words[dist(gen)] + " ";
+            chunk += words[dist(gen)];
+            ++word_count;
+
+            if (word_count % 50 == 0) {
+                chunk += "\n";  // New line after every 50 words
+            } else {
+                chunk += " ";
+            }
         }
 
         out << chunk;
