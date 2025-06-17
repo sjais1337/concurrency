@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <stdexcept>
+#include <chrono> 
 #include "config.h"
 #include "file_processor.h"
 
@@ -95,7 +96,11 @@ int main(int argc, char* argv[])
             }
             else
             {
-                execute_search(file, config);
+              auto start_time = chrono::high_resolution_clock::now();
+              execute_search(file, config);
+              auto end_time = chrono::high_resolution_clock::now();
+              chrono::duration<double, milli> elapsed = end_time - start_time;
+              cout << "\n--- All tasks finished in " << elapsed.count() << " ms. Printing word frequency analysis ---" << endl;
             }
         }
         catch (const exception& e)

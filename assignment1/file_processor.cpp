@@ -68,7 +68,7 @@ void execute_search(const string& filename, const Config& config)
             {
                 cout << line_num << ": ";
             }
-            cout << line << endl;
+           // cout << line << endl;
         }
     }
 }
