@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <chrono> 
 #include "config.h"
+#include <thread>
 #include "file_processor.h"
 
 using namespace std;
@@ -86,6 +87,9 @@ int main(int argc, char* argv[])
         print_usage(argv[0]);
         return 1;
     }
+    
+    auto start_pool = chrono::high_resolution_clock::now();
+    vector<thread> threads;
 
     for(const auto& file : config.files)
     {
@@ -96,11 +100,11 @@ int main(int argc, char* argv[])
             }
             else
             {
-              auto start_time = chrono::high_resolution_clock::now();
-              execute_search(file, config);
-              auto end_time = chrono::high_resolution_clock::now();
-              chrono::duration<double, milli> elapsed = end_time - start_time;
-              cout << "\n--- All tasks finished in " << elapsed.count() << " ms. Printing word frequency analysis ---" << endl;
+        //      auto start_time = chrono::high_resolution_clock::now();
+              threads.emplace_back(execute_search, file, ref(config));
+        //      auto end_time = chrono::high_resolution_clock::now();
+        //      chrono::duration<double, milli> elapsed = end_time - start_time;
+        //      cout << "\n--- Processed " << file << " in " << elapsed.count() << " ms. Printing word frequency analysis ---" << endl;
             }
         }
         catch (const exception& e)
@@ -108,6 +112,15 @@ int main(int argc, char* argv[])
             cerr << "Error processing file " << file << ": " << e.what() << endl;
         }
     }
+
+    for(auto& t: threads) {
+      t.join();
+    }
+    auto end_pool = chrono::high_resolution_clock::now();
+    
+    chrono::duration<double, milli> elapsed = end_pool - start_pool;
+    
+    cout << "Finished processing files in " << elapsed.count() << " ms." << endl; 
 
     return 0;
 }

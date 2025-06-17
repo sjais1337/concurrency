@@ -1,5 +1,5 @@
 #include "file_processor.h"
-
+#include <chrono>
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -36,6 +36,8 @@ static string replace_all(string source, const string& from, const string& to)
 
 void execute_search(const string& filename, const Config& config)
 {
+  
+    auto start_time = chrono::high_resolution_clock::now();
     ifstream file(filename);
 
     if(!file.is_open())
@@ -60,17 +62,21 @@ void execute_search(const string& filename, const Config& config)
 
         if(found != config.invert_match)
         {
-            if(print_filename)
-            {
-                cout << filename << ": ";
-            }
-            if(config.line_number)
-            {
-                cout << line_num << ": ";
-            }
-           // cout << line << endl;
+          //  if(print_filename)
+          //  {
+          //      cout << filename << ": ";
+          //  }
+          //  if(config.line_number)
+          //  {
+          //      cout << line_num << ": ";
+          //  }
+          // cout << line << endl;
         }
     }
+  
+    auto end_time = chrono::high_resolution_clock::now();
+    chrono::duration<double, milli> elapsed = end_time - start_time;
+    cout << "\n--- Processed " << filename << " in " << elapsed.count() << " ms. Printing word frequency analysis ---" << endl;
 }
 
 void execute_replace(const string& filename, const Config& config)
