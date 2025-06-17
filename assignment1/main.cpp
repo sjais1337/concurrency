@@ -4,7 +4,6 @@
 #include <stdexcept>
 #include <chrono> 
 #include "config.h"
-#include <thread>
 #include "file_processor.h"
 
 using namespace std;
@@ -13,11 +12,11 @@ void print_usage(const string& program_name)
 {
     cerr << "A grep-like tool with replacing capabilities. \n \n";
     cerr << "USAGE:\n";
-    cerr << "  " << program_name << " [OPTIONS] <pattern> <file1> [file2]...\n";
-    cerr << "  " << program_name << " [OPTIONS] -r <replacement> <pattern> <file1> [file2]...\n";
+    cerr << " " << program_name << " [OPTIONS] <pattern> <file1> [file2]...\n";
+    cerr << " " << program_name << " [OPTIONS] -r <replacement> <pattern> <file1> [file2]...\n";
     cerr << "OPTIONS:\n";
-    cerr << "   -r, --replace <TEXT>    Enable find-and-replace mode.\n";
-    cerr << "   -i, --ignore-case       Perform case-insensitive matching.\n";
+    cerr << "  -r, --replace <TEXT>    Enable find-and-replace mode.\n";
+    cerr << "  -i, --ignore-case       Perform case-insensitive matching.\n";
     cerr << "  -n, --line-number      Prefix each line of output with its line number.\n";
     cerr << "  -v, --invert-match     Select non-matching lines.\n";
     cerr << "  -h, --help             Display this help message.\n";
@@ -89,22 +88,17 @@ int main(int argc, char* argv[])
     }
     
     auto start_pool = chrono::high_resolution_clock::now();
-    vector<thread> threads;
 
     for(const auto& file : config.files)
     {
         try {
             if(config.replace_mode)
             {
-                execute_replace(file, config);
+              execute_replace(file, config);
             }
             else
             {
-        //      auto start_time = chrono::high_resolution_clock::now();
-              threads.emplace_back(execute_search, file, ref(config));
-        //      auto end_time = chrono::high_resolution_clock::now();
-        //      chrono::duration<double, milli> elapsed = end_time - start_time;
-        //      cout << "\n--- Processed " << file << " in " << elapsed.count() << " ms. ---" << endl;
+              execute_search(file, config);
             }
         }
         catch (const exception& e)
@@ -113,9 +107,6 @@ int main(int argc, char* argv[])
         }
     }
 
-    for(auto& t: threads) {
-      t.join();
-    }
     auto end_pool = chrono::high_resolution_clock::now();
     
     chrono::duration<double, milli> elapsed = end_pool - start_pool;

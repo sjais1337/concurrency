@@ -34,7 +34,7 @@ static string replace_all(string source, const string& from, const string& to)
 }
 
 
-void execute_search(const string& filename, const Config& config)
+void execute_search(const string& filename, const Config config)
 {
   
     auto start_time = chrono::high_resolution_clock::now();
@@ -60,18 +60,18 @@ void execute_search(const string& filename, const Config& config)
         
         bool found = (line_to_search.find(pattern_to_search) != string::npos);
 
-        if(found != config.invert_match)
-        {
-          //  if(print_filename)
-          //  {
-          //      cout << filename << ": ";
-          //  }
-          //  if(config.line_number)
-          //  {
-          //      cout << line_num << ": ";
-          //  }
-          // cout << line << endl;
-        }
+        // if(found != config.invert_match)
+        // {
+        //     if(print_filename)
+        //     {
+        //         cout << filename << ": ";
+        //     }
+        //     if(config.line_number)
+        //     {
+        //         cout << line_num << ": ";
+        //     }
+        //    cout << line << endl;
+        // }
     }
   
     auto end_time = chrono::high_resolution_clock::now();
@@ -79,7 +79,7 @@ void execute_search(const string& filename, const Config& config)
     cout << "--- Processed " << filename << " in " << elapsed.count() << " ms. ---" << endl;
 }
 
-void execute_replace(const string& filename, const Config& config)
+void execute_replace(const string& filename, const Config config)
 {
     ifstream infile(filename);
     if(!infile.is_open())
