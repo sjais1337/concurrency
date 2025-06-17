@@ -89,7 +89,7 @@ int main() {
 
     auto time_difference = time_end - time_start; 
 
-    std::cout << "🎉 All files generated successfully in " << time_difference.count() << " seconds.";
+    std::cout << "All files generated successfully in " << time_difference.count() << " seconds.";
     return 0;
 }
 
