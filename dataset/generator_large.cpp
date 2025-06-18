@@ -86,7 +86,7 @@ int main() {
     auto time_start = std::chrono::high_resolution_clock::now();
 
     for (size_t i = 1; i <= NUM_FILES; ++i) {
-        std::string filename = std::to_string(i) + ".txt";
+        std::string filename = "large/" + std::to_string(i) + ".txt";
         threads.emplace_back(generate_file, std::cref(words), filename);
     }
 
