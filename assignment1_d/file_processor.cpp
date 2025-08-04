@@ -1,4 +1,5 @@
 #include "file_processor.h"
+#include "logger.h"
 #include <chrono>
 #include <string>
 #include <iostream>
@@ -39,8 +40,7 @@ void execute_search(const string& filename, const Config& config, Shared& data) 
     ifstream file(filename);
 
     if(!file.is_open()) {
-        lock_guard<mutex> lock(data.out_mtx);
-        cerr << "Warning: Could not open file " << filename << endl;
+        Logger::getInstance().logError("Warning: Could not open file " + filename);
         return;
     }
 
@@ -64,11 +64,12 @@ void execute_search(const string& filename, const Config& config, Shared& data) 
     auto end = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::milliseconds>(end - start).count();
 
-    lock_guard<mutex> data_lock(data.data_mtx);
+    std::unique_lock<std::shared_mutex> data_lock(data.data_mtx);
     data.total_occ += count;
-    lock_guard<mutex> out_lock(data.out_mtx);
-    cout << "--- Found " << count << " occurrences ---" << endl; 
-    cout << "--- Processed " << filename << " in " << duration << " ms ---" << endl;
+    data_lock.unlock();
+    
+    Logger::getInstance().log("Found " + to_string(count) + " occurrences in " + filename);
+    Logger::getInstance().log("Processed " + filename + " in " + to_string(duration) + " ms");
 }
 
 
@@ -77,7 +78,7 @@ void execute_replace(const string& filename, const Config& config)
     ifstream infile(filename);
     if(!infile.is_open())
     {
-        cerr << "Warning: Could not open file for reading: " << filename << endl;
+        Logger::getInstance().logError("Warning: Could not open file for reading: " + filename);
         return;
     }
 
@@ -86,7 +87,7 @@ void execute_replace(const string& filename, const Config& config)
 
     if(!outfile.is_open())
     {
-        cerr << "Error: Could not create temporary file for writing." << endl;
+        Logger::getInstance().logError("Error: Could not create temporary file for writing.");
         return;
     }
 
@@ -112,20 +113,20 @@ void execute_replace(const string& filename, const Config& config)
     {
         if(remove(filename.c_str()) != 0)
         {
-            cerr << "Error: Could not remove original file." << endl;
+            Logger::getInstance().logError("Error: Could not remove original file.");
             return;
         }
         
         if(rename(temp_filename.c_str(), filename.c_str()) != 0)
         {
-            cerr << "Error: Could not rename temporary file." << endl;
+            Logger::getInstance().logError("Error: Could not rename temporary file.");
         }
         else
         {
-            cout << "Replaced matches in: " << filename << std::endl;
+            Logger::getInstance().log("Replaced matches in: " + filename);
         }
     } else {
         remove(temp_filename.c_str());
-        cout << "No matches found in: " << filename << endl;
+        Logger::getInstance().log("No matches found in: " + filename);
     }
 }

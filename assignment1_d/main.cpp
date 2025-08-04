@@ -7,36 +7,39 @@
 #include <thread>
 #include "file_processor.h"
 #include "thread_safe.h"
-
+#include "logger.h"
+#include <shared_mutex>
 
 using namespace std;
 
 void print_usage(const string& program_name)
 {
-    cerr << "A grep-like tool with replacing capabilities. \n \n";
-    cerr << "USAGE:\n";
-    cerr << "  " << program_name << " [OPTIONS] <pattern> <file1> [file2]...\n";
-    cerr << "  " << program_name << " [OPTIONS] -r <replacement> <pattern> <file1> [file2]...\n";
-    cerr << "OPTIONS:\n";
-    cerr << "   -r, --replace <TEXT>    Enable find-and-replace mode.\n";
-    cerr << "   -i, --ignore-case       Perform case-insensitive matching.\n";
-    cerr << "  -n, --line-number      Prefix each line of output with its line number.\n";
-    cerr << "  -v, --invert-match     Select non-matching lines.\n";
-    cerr << "  -h, --help             Display this help message.\n";
+    Logger::getInstance().logError("A grep-like tool with replacing capabilities. \n");
+    Logger::getInstance().logError("USAGE:");
+    Logger::getInstance().logError("  " + program_name + " [OPTIONS] <pattern> <file1> [file2]...");
+    Logger::getInstance().logError("  " + program_name + " [OPTIONS] -r <replacement> <pattern> <file1> [file2]...");
+    Logger::getInstance().logError("OPTIONS:");
+    Logger::getInstance().logError("   -r, --replace <TEXT>   Enable find-and-replace mode.");
+    Logger::getInstance().logError("   -i, --ignore-case      Perform case-insensitive matching.");
+    Logger::getInstance().logError("   -n, --line-number      Prefix each line of output with its line number.");
+    Logger::getInstance().logError("   -v, --invert-match     Select non-matching lines.");
+    Logger::getInstance().logError("   -h, --help             Display this help message.");
 }
 
 void reporter(Shared& data){
     while (true) {
-        {
-            lock_guard<mutex> out_lock(data.out_mtx);
-            lock_guard<mutex> data_lock(data.data_mtx);
-
-            if(data.complete) {
-                break;
-            }
-
-            cout << "Total occurrences found so far: " << data.total_occ << endl;
+        
+        std::shared_lock<std::shared_mutex> lock(data.data_mtx);
+    
+        if(data.complete) {
+            break;
         }
+
+        size_t total = data.total_occ;
+        
+        lock.unlock();
+
+        Logger::getInstance().log("Total occurrences found so far: " + std::to_string(total)); 
 
         this_thread::sleep_for(chrono::milliseconds(100));
     }
@@ -101,7 +104,7 @@ int main(int argc, char* argv[])
     } 
     catch (const exception& e)
     {
-        cerr << "Argument Error: " << e.what() << endl;
+        Logger::getInstance().logError("Argument Error: " + string(e.what()));
         print_usage(argv[0]);
         return 1;
     }
@@ -130,7 +133,7 @@ int main(int argc, char* argv[])
         }
         catch (const exception& e)
         {
-            cerr << "Error processing file " << file << ": " << e.what() << endl;
+            Logger::getInstance().logError("Error processing file " + file + ": " + e.what());
         }
     }
 
@@ -141,7 +144,7 @@ int main(int argc, char* argv[])
     }
 
     {
-        lock_guard<mutex> data_lock(shared_data.data_mtx);
+        std::unique_lock<std::shared_mutex> data_lock(shared_data.data_mtx);
         shared_data.complete = true;
     }
 
@@ -152,9 +155,8 @@ int main(int argc, char* argv[])
     auto end_pool = chrono::high_resolution_clock::now();
     
     chrono::duration<double, milli> elapsed = end_pool - start_pool;
-    
-    cout << "Total occurrences found: " << shared_data.total_occ << endl;
-    cout << "Finished processing files in " << elapsed.count() << " ms." << endl; 
+    Logger::getInstance().log("Total occurrences found: " + std::to_string(shared_data.total_occ));
+    Logger::getInstance().log("Finished processing files in " + std::to_string(elapsed.count()) + " ms.");
 
     return 0;
 }
