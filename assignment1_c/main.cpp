@@ -6,6 +6,8 @@
 #include "config.h"
 #include <thread>
 #include "file_processor.h"
+#include "thread_safe.h"
+
 
 using namespace std;
 
@@ -23,6 +25,22 @@ void print_usage(const string& program_name)
     cerr << "  -h, --help             Display this help message.\n";
 }
 
+void reporter(Shared& data){
+    while (true) {
+        {
+            lock_guard<mutex> out_lock(data.out_mtx);
+            lock_guard<mutex> data_lock(data.data_mtx);
+
+            if(data.complete) {
+                break;
+            }
+
+            cout << "Total occurrences found so far: " << data.total_occ << endl;
+        }
+
+        this_thread::sleep_for(chrono::milliseconds(100));
+    }
+}
 
 int main(int argc, char* argv[])
 {
@@ -90,6 +108,9 @@ int main(int argc, char* argv[])
     
     auto start_pool = chrono::high_resolution_clock::now();
     vector<thread> threads;
+    Shared shared_data;
+
+    thread reporter_thread(reporter, ref(shared_data));
 
     for(const auto& file : config.files)
     {
@@ -101,7 +122,7 @@ int main(int argc, char* argv[])
             else
             {
         //      auto start_time = chrono::high_resolution_clock::now();
-              threads.emplace_back(execute_search, file, ref(config));
+              threads.emplace_back(execute_search, file, ref(config), ref(shared_data));
         //      auto end_time = chrono::high_resolution_clock::now();
         //      chrono::duration<double, milli> elapsed = end_time - start_time;
         //      cout << "\n--- Processed " << file << " in " << elapsed.count() << " ms. ---" << endl;
@@ -114,12 +135,25 @@ int main(int argc, char* argv[])
     }
 
     for(auto& t: threads) {
-      t.join();
+        if(t.joinable()){
+            t.join();
+        }
     }
+
+    {
+        lock_guard<mutex> data_lock(shared_data.data_mtx);
+        shared_data.complete = true;
+    }
+
+    if(reporter_thread.joinable()){
+        reporter_thread.join();
+    }
+
     auto end_pool = chrono::high_resolution_clock::now();
     
     chrono::duration<double, milli> elapsed = end_pool - start_pool;
     
+    cout << "Total occurrences found: " << shared_data.total_occ << endl;
     cout << "Finished processing files in " << elapsed.count() << " ms." << endl; 
 
     return 0;

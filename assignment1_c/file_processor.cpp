@@ -6,7 +6,8 @@
 #include <stdexcept>
 #include <algorithm>
 #include <cctype>
-
+#include <mutex>
+#include <thread> 
 using namespace std;
 
 static string to_lower(const string& str) {
@@ -33,11 +34,12 @@ static string replace_all(string source, const string& from, const string& to)
     return new_string;
 }
 
-void execute_search(const string& filename, const Config& config) {
+void execute_search(const string& filename, const Config& config, Shared& data) {
     auto start = chrono::high_resolution_clock::now();
     ifstream file(filename);
 
     if(!file.is_open()) {
+        lock_guard<mutex> lock(data.out_mtx);
         cerr << "Warning: Could not open file " << filename << endl;
         return;
     }
@@ -61,6 +63,10 @@ void execute_search(const string& filename, const Config& config) {
 
     auto end = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::milliseconds>(end - start).count();
+
+    lock_guard<mutex> data_lock(data.data_mtx);
+    data.total_occ += count;
+    lock_guard<mutex> out_lock(data.out_mtx);
     cout << "--- Found " << count << " occurrences ---" << endl; 
     cout << "--- Processed " << filename << " in " << duration << " ms ---" << endl;
 }
