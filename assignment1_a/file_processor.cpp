@@ -34,52 +34,41 @@ static string replace_all(string source, const string& from, const string& to)
 }
 
 
-void execute_search(const string& filename, const Config config)
-{
-  
-    auto start_time = chrono::high_resolution_clock::now();
+void execute_search(const string& filename, const Config& config) {
+    auto start = chrono::high_resolution_clock::now();
     ifstream file(filename);
 
-    if(!file.is_open())
-    {
-        cerr << "Warning: Could not open file: " << filename << endl;
+    if(!file.is_open()) {
+        cerr << "Warning: Could not open file " << filename << endl;
         return;
     }
 
     string line;
-    int line_num = 0;
+    size_t line_number = 0;
     bool print_filename = config.files.size() > 1;
+    size_t count = 0;
 
-    string pattern_to_search = config.ignore_case ? to_lower(config.pattern) : config.pattern;
+    string pattern = config.ignore_case ? to_lower(config.pattern) : config.pattern;
 
-
-    while(getline(file, line))
-    {
-        line_num++;
-        string line_to_search = config.ignore_case ? to_lower(line): line;
-        
-        bool found = (line_to_search.find(pattern_to_search) != string::npos);
-
-        // if(found != config.invert_match)
-        // {
-        //     if(print_filename)
-        //     {
-        //         cout << filename << ": ";
-        //     }
-        //     if(config.line_number)
-        //     {
-        //         cout << line_num << ": ";
-        //     }
-        //    cout << line << endl;
-        // }
+    while(getline(file, line)) {
+        line_number++;
+        string modified_line = config.ignore_case ? to_lower(line) : line;
+        string::size_type last_pos = 0, find_pos; 
+        while((find_pos = modified_line.find(pattern, last_pos)) != string::npos) {
+            count++;
+            last_pos = find_pos + pattern.size();
+        }
     }
-  
-    auto end_time = chrono::high_resolution_clock::now();
-    chrono::duration<double, milli> elapsed = end_time - start_time;
-    cout << "--- Processed " << filename << " in " << elapsed.count() << " ms. ---" << endl;
+
+    auto end = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::milliseconds>(end - start).count();
+    cout << "--- Found " << count << " occurrences ---" << endl; 
+    cout << "--- Processed " << filename << " in " << duration << " ms ---" << endl;
 }
 
-void execute_replace(const string& filename, const Config config)
+
+
+void execute_replace(const string& filename, const Config& config)
 {
     ifstream infile(filename);
     if(!infile.is_open())
